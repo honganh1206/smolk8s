@@ -48,3 +48,9 @@ Multiple instances of Worker and one instance of Manager, since Workers don't ca
 ## Task
 
 A task first submitted (Pending) -> Manager figures out where to run the task (Scheduled) -> Selected machine starts the task (Running) -> Task is completed (Completed)
+
+A task is like a step when making a pizza. The context of a task is a Docker container, which provides necessary resources like CPU, memory and disk.
+
+## Worker
+
+The Workers will call the Docker APIs to interact with the Tasks (under Docker's containers)
