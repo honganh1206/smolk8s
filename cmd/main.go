@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/docker/docker/client"
 	"github.com/google/uuid"
 	"github.com/honganh1206/smolk8s/internal/task"
 	"github.com/honganh1206/smolk8s/internal/worker"
