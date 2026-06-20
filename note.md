@@ -54,3 +54,7 @@ A task is like a step when making a pizza. The context of a task is a Docker con
 ## Worker
 
 The Workers will call the Docker APIs to interact with the Tasks (under Docker's containers)
+
+A worker represents both a physical/virtual machine, and the worker component of the orchestration system
+
+## State machine
