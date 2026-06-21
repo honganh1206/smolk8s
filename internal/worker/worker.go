@@ -13,9 +13,11 @@ import (
 // Keep track of tasks
 type Worker struct {
 	Name string
-	// Accept tasks to run from Manager
+	// Accept tasks to run from Manager,
+	// describing the desired state of the task
 	Queue Queue
-	// Map UUIDs to tasks as datastore
+	// Map UUIDs to tasks as datastore,
+	// describing the current state of the task
 	Db        map[uuid.UUID]*task.Task
 	TaskCount int
 }
@@ -67,6 +69,16 @@ func (w *Worker) RunTask() task.DockerResult {
 func (w *Worker) AddTask(t task.Task) {
 	w.Queue.Enqueue(t)
 }
+
+
+func (w *Worker) GetTasks() []*task.Task{
+	tasks := []*task.Task{}
+	for _, t := range w.Db {
+		tasks = append(tasks, t)
+	}
+	return tasks
+}
+
 
 func (w *Worker) StartTask(t task.Task) task.DockerResult {
 	t.StartTime = time.Now().UTC()
