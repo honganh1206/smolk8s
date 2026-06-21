@@ -49,7 +49,7 @@ func (a *Api) StartTaskHandler(w http.ResponseWriter, r *http.Request) {
 	err := d.Decode(&te)
 	if err != nil {
 		msg := fmt.Sprintf("Error unmarshalling body: %v\n", err)
-		log.Printf(msg)
+		log.Print(msg)
 
 		w.WriteHeader(400)
 		e := ErrResponse{
