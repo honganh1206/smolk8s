@@ -19,11 +19,8 @@ type Worker struct {
 	// Map UUIDs to tasks as datastore,
 	// describing the current state of the task
 	Db        map[uuid.UUID]*task.Task
+	Stats     *Stats
 	TaskCount int
-}
-
-func (w *Worker) CollectStats() {
-	fmt.Println("I will collect stats")
 }
 
 // RunTask identifies the task's current state
@@ -70,8 +67,7 @@ func (w *Worker) AddTask(t task.Task) {
 	w.Queue.Enqueue(t)
 }
 
-
-func (w *Worker) GetTasks() []*task.Task{
+func (w *Worker) GetTasks() []*task.Task {
 	tasks := []*task.Task{}
 	for _, t := range w.Db {
 		tasks = append(tasks, t)
@@ -79,6 +75,15 @@ func (w *Worker) GetTasks() []*task.Task{
 	return tasks
 }
 
+func (w *Worker) CollectStats() {
+	for {
+		log.Println("Collecting stats...")
+		w.Stats = GetStats()
+		w.Stats.TaskCount = w.TaskCount
+		// Trigger every 15 seconds
+		time.Sleep(15 * time.Second)
+	}
+}
 
 func (w *Worker) StartTask(t task.Task) task.DockerResult {
 	t.StartTime = time.Now().UTC()

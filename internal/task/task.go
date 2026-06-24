@@ -25,7 +25,7 @@ type Task struct {
 	// Docker image
 	State State
 	Image string
-	// Resources for tasks
+	// CPU usage in percentage?
 	CPU    float64
 	Memory int64
 	Disk   int64

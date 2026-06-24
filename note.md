@@ -57,4 +57,6 @@ The Workers will call the Docker APIs to interact with the Tasks (under Docker's
 
 A worker represents both a physical/virtual machine, and the worker component of the orchestration system
 
-## State machine
+## Metrics
+
+Collect via `/proc`

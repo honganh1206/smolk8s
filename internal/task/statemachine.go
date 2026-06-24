@@ -20,4 +20,3 @@ func Contains(states []State, state State) bool {
 func ValidateTransition(src State, dst State) bool {
 	return Contains(stateTransitionMap[src], dst)
 }
-

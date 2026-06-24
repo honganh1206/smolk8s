@@ -49,5 +49,7 @@ func main() {
 		}
 	}(&w)
 
+	go w.CollectStats()
+
 	api.Start()
 }
