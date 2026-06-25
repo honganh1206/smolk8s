@@ -1,4 +1,4 @@
-package worker
+package apiserver
 
 import (
 	"encoding/json"
@@ -9,12 +9,13 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
 	"github.com/honganh1206/smolk8s/internal/task"
+	"github.com/honganh1206/smolk8s/internal/worker"
 )
 
-type Api struct {
+type Server struct {
 	Address string
 	Port    int
-	Worker  *Worker
+	Worker  *worker.Worker
 	// Route incoming requests to appropriate handler
 	Router *chi.Mux
 }
@@ -24,7 +25,20 @@ type ErrResponse struct {
 	Message        string
 }
 
-func (a *Api) Start() {
+func New(address string, port int, w *worker.Worker) *Server {
+	return &Server{
+		Address: address,
+		Port:    port,
+		Worker:  w,
+	}
+}
+
+func (a *Server) Start() {
+	a.InitRouter()
+	http.ListenAndServe(fmt.Sprintf("%s:%d", a.Address, a.Port), a.Router)
+}
+
+func (a *Server) InitRouter() {
 	a.Router = chi.NewRouter()
 	a.Router.Route("/tasks", func(r chi.Router) {
 		r.Post("/", a.StartTaskHandler)
@@ -37,14 +51,9 @@ func (a *Api) Start() {
 	a.Router.Route("/stats", func(r chi.Router) {
 		r.Get("/", a.GetStatsHandler)
 	})
-
-	http.ListenAndServe(fmt.Sprintf("%s:%d", a.Address, a.Port), a.Router)
 }
 
-func (a *Api) InitRouter() {
-}
-
-func (a *Api) StartTaskHandler(w http.ResponseWriter, r *http.Request) {
+func (a *Server) StartTaskHandler(w http.ResponseWriter, r *http.Request) {
 	d := json.NewDecoder(r.Body)
 	// Return errors for undefined fields
 	d.DisallowUnknownFields()
@@ -70,19 +79,19 @@ func (a *Api) StartTaskHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(te.Task)
 }
 
-func (a *Api) GetTasksHandler(w http.ResponseWriter, r *http.Request) {
+func (a *Server) GetTasksHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 	json.NewEncoder(w).Encode(a.Worker.GetTasks())
 }
 
-func (a *Api) GetStatsHandler(w http.ResponseWriter, r *http.Request) {
+func (a *Server) GetStatsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 	json.NewEncoder(w).Encode(a.Worker.Stats)
 }
 
-func (a *Api) StopTaskHandler(w http.ResponseWriter, r *http.Request) {
+func (a *Server) StopTaskHandler(w http.ResponseWriter, r *http.Request) {
 	taskID := chi.URLParam(r, "taskID")
 	if taskID == "" {
 		log.Printf("No taskID passed in request.\n")

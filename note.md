@@ -1,3 +1,5 @@
+Goal: A declarative system where a user declares the desired state of a task.
+
 What problems does an orchestrator solve?
 
 - Deploy apps on bare metal servers -> VMs resolve this
@@ -60,3 +62,13 @@ A worker represents both a physical/virtual machine, and the worker component of
 ## Metrics
 
 Collect via `/proc`
+
+## Manager
+
+Isolate administrative concerns from execution concerns => Separation of concerns like handling requests, assigning tasks, keeping track of tasks and worker state, restarting failed tasks, etc.
+
+Control plane controls how data moves from A to B e.g., BGP, OSPF. Data plane does the actual work of moving the data around.
+
+## State machine
+
+Manager receives tasks as Pending -> Hand out tasks to workers (Scheduled) -> Workers run tasks with Docker client (Running) -> Task done running (Completed) or failed (Failed) -> Manager compares task state in DB with task state returned from workers -> Sync task state to state of response

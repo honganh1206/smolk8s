@@ -7,16 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type State int
-
-const (
-	Pending State = iota
-	Scheduled
-	Running
-	Completed
-	Failed
-)
-
 // A process running on a single machine
 type Task struct {
 	ID          uuid.UUID

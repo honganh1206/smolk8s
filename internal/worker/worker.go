@@ -75,6 +75,14 @@ func (w *Worker) GetTasks() []*task.Task {
 	return tasks
 }
 
+func New(name string) *Worker {
+	return &Worker{
+		Name:  name,
+		Queue: *NewQueue(),
+		Db:    make(map[uuid.UUID]*task.Task),
+	}
+}
+
 func (w *Worker) CollectStats() {
 	for {
 		log.Println("Collecting stats...")
