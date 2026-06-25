@@ -1,4 +1,4 @@
-package apiserver
+package worker
 
 import (
 	"encoding/json"
@@ -8,24 +8,20 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
+	"github.com/honganh1206/smolk8s/internal/api"
 	"github.com/honganh1206/smolk8s/internal/task"
-	"github.com/honganh1206/smolk8s/internal/worker"
 )
 
 type Server struct {
 	Address string
 	Port    int
-	Worker  *worker.Worker
+	Worker  *Worker
 	// Route incoming requests to appropriate handler
 	Router *chi.Mux
 }
 
-type ErrResponse struct {
-	HTTPStatusCode int
-	Message        string
-}
 
-func New(address string, port int, w *worker.Worker) *Server {
+func NewServer(address string, port int, w *Worker) *Server {
 	return &Server{
 		Address: address,
 		Port:    port,
@@ -65,7 +61,7 @@ func (a *Server) StartTaskHandler(w http.ResponseWriter, r *http.Request) {
 		log.Print(msg)
 
 		w.WriteHeader(400)
-		e := ErrResponse{
+		e := api.ErrResponse{
 			HTTPStatusCode: 400,
 			Message:        msg,
 		}

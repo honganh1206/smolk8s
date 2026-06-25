@@ -28,7 +28,7 @@ func TestAddTaskEnqueues(t *testing.T) {
 func TestRunTaskEmptyQueue(t *testing.T) {
 	w := newWorker()
 
-	result := w.RunTask()
+	result := w.runTask()
 
 	if result.Error != nil {
 		t.Fatalf("error = %v, want nil", result.Error)
@@ -41,7 +41,7 @@ func TestRunTaskInvalidTransition(t *testing.T) {
 	tk := task.Task{ID: uuid.New(), Name: "done", State: task.Completed}
 	w.AddTask(tk)
 
-	result := w.RunTask()
+	result := w.runTask()
 
 	if result.Error == nil {
 		t.Fatal("error = nil, want invalid transition error")
@@ -61,7 +61,7 @@ func TestRunTaskUnreachableState(t *testing.T) {
 	w.Db[id] = &persisted
 	w.AddTask(task.Task{ID: id, Name: "run", State: task.Running})
 
-	result := w.RunTask()
+	result := w.runTask()
 
 	if result.Error == nil || result.Error.Error() != "we should not get here" {
 		t.Fatalf("error = %v, want \"we should not get here\"", result.Error)

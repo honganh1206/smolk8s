@@ -115,7 +115,7 @@ func TestUpdateTasksSyncsState(t *testing.T) {
 		Workers: []string{addr},
 	}
 
-	m.UpdateTasks()
+	m.updateTasks()
 
 	got := m.TaskDb[id]
 	if got.State != task.Running {
@@ -149,7 +149,7 @@ func TestUpdateTasksIgnoresUnknownTask(t *testing.T) {
 	}
 
 	// Unknown task must not be added to the datastore.
-	m.UpdateTasks()
+	m.updateTasks()
 
 	if len(m.TaskDb) != 0 {
 		t.Fatalf("TaskDb size = %d, want 0", len(m.TaskDb))

@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/honganh1206/smolk8s/internal/apiserver"
+	"github.com/honganh1206/smolk8s/internal/api"
 	"github.com/honganh1206/smolk8s/internal/task"
 	"github.com/honganh1206/smolk8s/internal/worker"
 )
@@ -64,8 +65,18 @@ func (m *Manager) SelectWorker() string {
 	return m.Workers[newWorker]
 }
 
-// UpdateTasks queries the workers for the tasks and update the state of the tasks
 func (m *Manager) UpdateTasks() {
+	for {
+		log.Println("Checking for task updates from workers")
+		m.updateTasks()
+		log.Println("Task updates completed")
+		log.Println("Sleeping for 15 seconds")
+		time.Sleep(15 * time.Second)
+	}
+}
+
+// updateTasks queries the workers for the tasks and update the state of the tasks
+func (m *Manager) updateTasks() {
 	for _, w := range m.Workers {
 		log.Printf("Checking worker %v for task updates", w)
 
@@ -111,6 +122,23 @@ func (m *Manager) AddTask(te task.TaskEvent) {
 	m.Pending.Enqueue(te)
 }
 
+func (m *Manager) GetTasks() []*task.Task {
+	tasks := []*task.Task{}
+	for _, t := range m.TaskDb {
+		tasks = append(tasks, t)
+	}
+	return tasks
+}
+
+func (m *Manager) ProcessTasks() {
+	for {
+		log.Println("Processing any tasks in the queue")
+		m.SendWork()
+		log.Println("Sleeping for 10 seconds")
+		time.Sleep(10 * time.Second)
+	}
+}
+
 // TODO: A lot of maps that need locks
 func (m *Manager) SendWork() {
 	if m.Pending.Len() > 0 {
@@ -147,7 +175,7 @@ func (m *Manager) SendWork() {
 
 		d := json.NewDecoder(resp.Body)
 		if resp.StatusCode != http.StatusCreated {
-			e := apiserver.ErrResponse{}
+			e := api.ErrResponse{}
 			err := d.Decode(&e)
 			if err != nil {
 				fmt.Printf("Error decoding response: %s\n", err.Error())

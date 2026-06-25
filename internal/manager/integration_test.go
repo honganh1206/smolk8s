@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/honganh1206/smolk8s/internal/apiserver"
 	"github.com/honganh1206/smolk8s/internal/task"
 	"github.com/honganh1206/smolk8s/internal/worker"
 )
@@ -18,10 +17,10 @@ func newWorkerServer(t *testing.T) (*worker.Worker, *httptest.Server, string) {
 	t.Helper()
 
 	w := worker.New("")
-	api := apiserver.New("", 0, w)
-	api.InitRouter()
+	workerApi := worker.NewServer("", 0, w)
+	workerApi.InitRouter()
 
-	server := httptest.NewServer(api.Router)
+	server := httptest.NewServer(workerApi.Router)
 	addr := strings.TrimPrefix(server.URL, "http://")
 	return w, server, addr
 }
