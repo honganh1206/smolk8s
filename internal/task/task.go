@@ -21,6 +21,8 @@ type Task struct {
 	Disk   int64
 	// Ensure the machine allocate proper network ports for tasks
 	ExposedPorts nat.PortSet
+	// Host-to-container port mappings Docker assigned after containers start
+	HostPorts    nat.PortMap
 	PortBindings map[string]string
 	// Tell the system what to do
 	// when a task stops or fails unexpectedly
@@ -28,6 +30,8 @@ type Task struct {
 	RestartPolicy string
 	StartTime     time.Time
 	FinishTime    time.Time
+	HealthCheck string
+	RestartCount int
 }
 
 type TaskEvent struct {

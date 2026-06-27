@@ -26,6 +26,11 @@ type DockerResult struct {
 	Result      string
 }
 
+type DockerInspectResponse struct {
+	Error     error
+	Container *container.InspectResponse
+}
+
 func NewDocker(config *Config) *Docker {
 	dc, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -136,4 +141,17 @@ func (d *Docker) Stop(id string) DockerResult {
 	}
 
 	return DockerResult{ContainerID: id, Action: "stop", Result: "success", Error: nil}
+}
+
+// Health check for containers
+func (d *Docker) Inspect(containerID string) DockerInspectResponse {
+	dc, _ := client.NewClientWithOpts(client.FromEnv)
+	ctx := context.Background()
+	resp, err := dc.ContainerInspect(ctx, containerID)
+	if err != nil {
+		log.Printf("Error inspecting container: %s\n", err)
+		return DockerInspectResponse{Error: err}
+	}
+
+	return DockerInspectResponse{Container: &resp}
 }

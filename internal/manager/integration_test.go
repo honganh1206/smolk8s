@@ -41,7 +41,7 @@ func TestSendWorkDeliversTaskToWorker(t *testing.T) {
 		Task: task.Task{ID: id, Name: "t1", Image: "strm/helloworld-http"},
 	}
 	m.AddTask(te)
-	m.SendWork()
+	m.sendWork()
 
 	// Worker side: task landed on the queue (StartTaskHandler -> AddTask).
 	if got := w.Queue.Len(); got != 1 {
@@ -65,6 +65,43 @@ func TestSendWorkDeliversTaskToWorker(t *testing.T) {
 	}
 
 	// Manager dequeued the work; nothing left pending.
+	if got := m.Pending.Len(); got != 0 {
+		t.Errorf("pending queue length = %d, want 0", got)
+	}
+}
+
+// TestRestartTaskDeliversToWorker exercises the manager -> worker restart path
+// against a real worker API: restartTask resends the task as a TaskEvent, the
+// worker decodes and enqueues it. Asserts the task crossed the wire and the
+// manager reset its state + bumped the retry counter.
+func TestRestartTaskDeliversToWorker(t *testing.T) {
+	w, server, addr := newWorkerServer(t)
+	defer server.Close()
+
+	id := uuid.New()
+	tk := &task.Task{ID: id, Name: "t1", Image: "strm/helloworld-http", State: task.Failed}
+
+	m := New([]string{addr})
+	m.TaskDb[id] = tk
+	m.TaskWorkerMap[id] = addr
+
+	m.restartTask(tk)
+
+	// Worker side: the restarted task was enqueued (StartTaskHandler -> AddTask).
+	if got := w.Queue.Len(); got != 1 {
+		t.Fatalf("worker queue length = %d, want 1 (restart did not cross the wire)", got)
+	}
+
+	// Manager side: task reset to Scheduled with restart count bumped.
+	if tk.State != task.Scheduled {
+		t.Errorf("State = %v, want %v", tk.State, task.Scheduled)
+	}
+	if tk.RestartCount != 1 {
+		t.Errorf("RestartCount = %d, want 1", tk.RestartCount)
+	}
+	if m.TaskDb[id] != tk {
+		t.Errorf("TaskDb[%v] not updated to the restarted task", id)
+	}
 	if got := m.Pending.Len(); got != 0 {
 		t.Errorf("pending queue length = %d, want 0", got)
 	}

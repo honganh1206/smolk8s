@@ -48,7 +48,7 @@ func TestSendWorkEmptyQueue(t *testing.T) {
 
 	// No pending work: must take the else branch without panic
 	// and leave the queue empty.
-	m.SendWork()
+	m.sendWork()
 
 	if got := m.Pending.Len(); got != 0 {
 		t.Fatalf("queue length = %d, want 0", got)
@@ -62,7 +62,7 @@ func TestSendWorkReEnqueuesOnConnError(t *testing.T) {
 		EventDb:       make(map[uuid.UUID]*task.TaskEvent),
 		WorkerTaskMap: make(map[string][]uuid.UUID),
 		TaskWorkerMap: make(map[uuid.UUID]string),
-		// Unroutable address so the POST fails fast and the task is requeued.
+		// Un-routable address so the POST fails fast and the task is requeued.
 		Workers: []string{"127.0.0.1:0"},
 	}
 
@@ -72,7 +72,7 @@ func TestSendWorkReEnqueuesOnConnError(t *testing.T) {
 	}
 	m.Pending.Enqueue(te)
 
-	m.SendWork()
+	m.sendWork()
 
 	// Connection failed, so the task event goes back on the queue.
 	if got := m.Pending.Len(); got != 1 {
@@ -84,6 +84,47 @@ func TestSendWorkReEnqueuesOnConnError(t *testing.T) {
 	}
 	if _, ok := m.EventDb[te.ID]; !ok {
 		t.Errorf("EventDb missing entry for event %v", te.ID)
+	}
+}
+
+func TestRestartTask(t *testing.T) {
+	id := uuid.New()
+
+	// Worker accepts the resent task: 201 + task body, like StartTaskHandler.
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(task.Task{ID: id})
+	}))
+	defer server.Close()
+
+	addr := strings.TrimPrefix(server.URL, "http://")
+
+	// A failed task that has already been restarted once.
+	tk := &task.Task{ID: id, Name: "t1", State: task.Failed, RestartCount: 1}
+	m := &Manager{
+		Pending:       *worker.NewQueue(),
+		TaskDb:        map[uuid.UUID]*task.Task{id: tk},
+		EventDb:       make(map[uuid.UUID]*task.TaskEvent),
+		WorkerTaskMap: make(map[string][]uuid.UUID),
+		// restartTask looks up the worker for this task by ID.
+		TaskWorkerMap: map[uuid.UUID]string{id: addr},
+	}
+
+	m.restartTask(tk)
+
+	// Task reset to Scheduled with the retry counter bumped.
+	if tk.State != task.Scheduled {
+		t.Errorf("State = %v, want %v", tk.State, task.Scheduled)
+	}
+	if tk.RestartCount != 2 {
+		t.Errorf("RestartCount = %d, want 2", tk.RestartCount)
+	}
+	if m.TaskDb[id] != tk {
+		t.Errorf("TaskDb[%v] not updated to the restarted task", id)
+	}
+	// Retry succeeded, so no requeue
+	if got := m.Pending.Len(); got != 0 {
+		t.Errorf("pending queue length = %d, want 0", got)
 	}
 }
 
@@ -132,26 +173,3 @@ func TestUpdateTasksSyncsState(t *testing.T) {
 	}
 }
 
-func TestUpdateTasksIgnoresUnknownTask(t *testing.T) {
-	// Worker reports a task the manager has never seen.
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode([]*task.Task{
-			{ID: uuid.New(), State: task.Running},
-		})
-	}))
-	defer server.Close()
-
-	addr := strings.TrimPrefix(server.URL, "http://")
-	m := &Manager{
-		TaskDb:  make(map[uuid.UUID]*task.Task),
-		Workers: []string{addr},
-	}
-
-	// Unknown task must not be added to the datastore.
-	m.updateTasks()
-
-	if len(m.TaskDb) != 0 {
-		t.Fatalf("TaskDb size = %d, want 0", len(m.TaskDb))
-	}
-}

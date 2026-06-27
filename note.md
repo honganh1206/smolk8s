@@ -69,6 +69,20 @@ Isolate administrative concerns from execution concerns => Separation of concern
 
 Control plane controls how data moves from A to B e.g., BGP, OSPF. Data plane does the actual work of moving the data around.
 
+We CAN run multiple instances of the Manager, but it will add complexity since we need to synchronize the state across all the instances. This will require consensus algorithm.
+
 ## State machine
 
 Manager receives tasks as Pending -> Hand out tasks to workers (Scheduled) -> Workers run tasks with Docker client (Running) -> Task done running (Completed) or failed (Failed) -> Manager compares task state in DB with task state returned from workers -> Sync task state to state of response
+
+## Failures
+
+Failures could happen at the application (startup, bugs) / individual tasks (resource problems, Docker daemon fail), orchestration system (worker, manager)
+
+We handle task failures on our own instead of relying on Docker restart policies. The manager will handle the failures by asking the worker to restart the task, or reassign to another worker if needed.
+
+However we could NOT just move the tasks to another worker by blunt force tactic, especially we might only have a single instance of a task.
+
+If the manager component dies, the task and the worker operate independently, but the worker will not receive any tasks
+
+
