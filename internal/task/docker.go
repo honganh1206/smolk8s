@@ -34,7 +34,7 @@ type DockerInspectResponse struct {
 func NewDocker(config *Config) *Docker {
 	dc, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		log.Printf("Error initializing Docker client: %v\n", err)
+		log.Printf("[docker] Error initializing Docker client: %v\n", err)
 		return &Docker{}
 	}
 	return &Docker{
@@ -48,11 +48,11 @@ func (d *Docker) Run() DockerResult {
 	ctx := context.Background()
 	reader, err := d.Client.ImagePull(ctx, d.Config.Image, image.PullOptions{})
 	if err != nil {
-		log.Printf("Error pulling image %s: %v\n", d.Config.Image, err)
+		log.Printf("[docker] Error pulling image %s: %v\n", d.Config.Image, err)
 		return DockerResult{Error: err}
 	}
 	if _, err := io.Copy(os.Stdout, reader); err != nil {
-		log.Printf("Error copy content to stdout %s: %v\n", d.Config.Image, err)
+		log.Printf("[docker] Error copy content to stdout %s: %v\n", d.Config.Image, err)
 		return DockerResult{Error: err}
 	}
 
@@ -83,13 +83,13 @@ func (d *Docker) Run() DockerResult {
 
 	resp, err := d.Client.ContainerCreate(ctx, cc, hc, nil, nil, d.Config.Name)
 	if err != nil {
-		log.Printf("Error creating container using image %s: %v\n", d.Config.Name, err)
+		log.Printf("[docker] Error creating container using image %s: %v\n", d.Config.Name, err)
 		return DockerResult{Error: err}
 	}
 
 	// TODO: Does this block anything?
 	if err = d.Client.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
-		log.Printf("Error starting container %s: %v\n", resp.ID, err)
+		log.Printf("[docker] Error starting container %s: %v\n", resp.ID, err)
 
 		return DockerResult{Error: err}
 	}
@@ -101,12 +101,12 @@ func (d *Docker) Run() DockerResult {
 		container.LogsOptions{ShowStdout: true, ShowStderr: true},
 	)
 	if err != nil {
-		log.Printf("Error getting logs from container %s: %v\n", resp.ID, err)
+		log.Printf("[docker] Error getting logs from container %s: %v\n", resp.ID, err)
 		return DockerResult{Error: err}
 	}
 
 	if _, err := stdcopy.StdCopy(os.Stdout, os.Stderr, out); err != nil {
-		log.Printf("Error streaming container logs to stdout and stderr from container %s: %v\n", resp.ID, err)
+		log.Printf("[docker] Error streaming container logs to stdout and stderr from container %s: %v\n", resp.ID, err)
 		return DockerResult{Error: err}
 	}
 
@@ -118,14 +118,14 @@ func (d *Docker) Run() DockerResult {
 }
 
 func (d *Docker) Stop(id string) DockerResult {
-	log.Printf("Attempting to stop a container %v...", id)
+	log.Printf("[docker] Attempting to stop a container %v...", id)
 
 	// TODO: Why creating a separate ctx here?
 	// Can we just share the same context with Run()?
 	ctx := context.Background()
 	err := d.Client.ContainerStop(ctx, id, container.StopOptions{})
 	if err != nil {
-		log.Printf("Error stopping container %s: %v\n", id, err)
+		log.Printf("[docker] Error stopping container %s: %v\n", id, err)
 		return DockerResult{Error: err}
 	}
 
@@ -136,7 +136,7 @@ func (d *Docker) Stop(id string) DockerResult {
 		Force:       false,
 	})
 	if err != nil {
-		log.Printf("Error removing container %s: %v\n", id, err)
+		log.Printf("[docker] Error removing container %s: %v\n", id, err)
 		return DockerResult{Error: err}
 	}
 
@@ -149,7 +149,7 @@ func (d *Docker) Inspect(containerID string) DockerInspectResponse {
 	ctx := context.Background()
 	resp, err := dc.ContainerInspect(ctx, containerID)
 	if err != nil {
-		log.Printf("Error inspecting container: %s\n", err)
+		log.Printf("[docker] Error inspecting container: %s\n", err)
 		return DockerInspectResponse{Error: err}
 	}
 

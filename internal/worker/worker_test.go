@@ -18,7 +18,7 @@ func newWorker() *Worker {
 func TestAddTaskEnqueues(t *testing.T) {
 	w := newWorker()
 
-	w.AddTask(task.Task{ID: uuid.New(), Name: "t1"})
+	w.addTask(task.Task{ID: uuid.New(), Name: "t1"})
 
 	if got := w.Queue.Len(); got != 1 {
 		t.Fatalf("queue length = %d, want 1", got)
@@ -39,7 +39,7 @@ func TestRunTaskInvalidTransition(t *testing.T) {
 	w := newWorker()
 	// Fresh task in Completed has no valid transitions (src == dst == Completed).
 	tk := task.Task{ID: uuid.New(), Name: "done", State: task.Completed}
-	w.AddTask(tk)
+	w.addTask(tk)
 
 	result := w.runTask()
 
@@ -59,7 +59,7 @@ func TestRunTaskUnreachableState(t *testing.T) {
 	// Running -> Running is valid, but the switch has no Running case.
 	persisted := task.Task{ID: id, Name: "run", State: task.Running}
 	w.Db[id] = &persisted
-	w.AddTask(task.Task{ID: id, Name: "run", State: task.Running})
+	w.addTask(task.Task{ID: id, Name: "run", State: task.Running})
 
 	result := w.runTask()
 

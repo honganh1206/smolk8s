@@ -10,41 +10,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/honganh1206/smolk8s/internal/task"
-	"github.com/honganh1206/smolk8s/internal/worker"
 )
 
-func TestSelectWorkerRoundRobin(t *testing.T) {
-	m := &Manager{
-		Workers: []string{"w0", "w1", "w2"},
-	}
-
-	// LastWorker starts at 0, so the first pick advances to index 1
-	// and the sequence wraps back to w0 after the last worker.
-	want := []string{"w1", "w2", "w0", "w1", "w2", "w0"}
-	for i, expected := range want {
-		if got := m.SelectWorker(); got != expected {
-			t.Fatalf("call %d: SelectWorker() = %q, want %q", i, got, expected)
-		}
-	}
-}
-
-func TestSelectWorkerSingle(t *testing.T) {
-	m := &Manager{Workers: []string{"only"}}
-
-	for i := 0; i < 3; i++ {
-		if got := m.SelectWorker(); got != "only" {
-			t.Fatalf("call %d: SelectWorker() = %q, want %q", i, got, "only")
-		}
-		if m.LastWorker != 0 {
-			t.Fatalf("call %d: LastWorker = %d, want 0", i, m.LastWorker)
-		}
-	}
-}
-
 func TestSendWorkEmptyQueue(t *testing.T) {
-	m := &Manager{
-		Pending: *worker.NewQueue(),
-	}
+	m := New([]string{}, "")
 
 	// No pending work: must take the else branch without panic
 	// and leave the queue empty.
@@ -56,15 +25,9 @@ func TestSendWorkEmptyQueue(t *testing.T) {
 }
 
 func TestSendWorkReEnqueuesOnConnError(t *testing.T) {
-	m := &Manager{
-		Pending:       *worker.NewQueue(),
-		TaskDb:        make(map[uuid.UUID]*task.Task),
-		EventDb:       make(map[uuid.UUID]*task.TaskEvent),
-		WorkerTaskMap: make(map[string][]uuid.UUID),
-		TaskWorkerMap: make(map[uuid.UUID]string),
-		// Un-routable address so the POST fails fast and the task is requeued.
-		Workers: []string{"127.0.0.1:0"},
-	}
+	// Un-routable address so the POST fails fast and the task is re-queued.
+	addr := "127.0.0.1:0"
+	m := New([]string{addr}, "")
 
 	te := task.TaskEvent{
 		ID:   uuid.New(),
@@ -101,14 +64,10 @@ func TestRestartTask(t *testing.T) {
 
 	// A failed task that has already been restarted once.
 	tk := &task.Task{ID: id, Name: "t1", State: task.Failed, RestartCount: 1}
-	m := &Manager{
-		Pending:       *worker.NewQueue(),
-		TaskDb:        map[uuid.UUID]*task.Task{id: tk},
-		EventDb:       make(map[uuid.UUID]*task.TaskEvent),
-		WorkerTaskMap: make(map[string][]uuid.UUID),
-		// restartTask looks up the worker for this task by ID.
-		TaskWorkerMap: map[uuid.UUID]string{id: addr},
-	}
+	m := New([]string{addr}, "")
+	m.TaskDb[id] = tk
+	// restartTask looks up the worker for this task by ID.
+	m.TaskWorkerMap[id] = addr
 
 	m.restartTask(tk)
 
@@ -151,10 +110,8 @@ func TestUpdateTasksSyncsState(t *testing.T) {
 	// UpdateTasks builds "http://%s/tasks", so pass host:port without scheme.
 	addr := strings.TrimPrefix(server.URL, "http://")
 
-	m := &Manager{
-		TaskDb:  map[uuid.UUID]*task.Task{id: {ID: id, State: task.Pending}},
-		Workers: []string{addr},
-	}
+	m := New([]string{addr}, "")
+	m.TaskDb[id] = &task.Task{ID: id, State: task.Pending}
 
 	m.updateTasks()
 
@@ -172,4 +129,3 @@ func TestUpdateTasksSyncsState(t *testing.T) {
 		t.Errorf("FinishTime = %v, want %v", got.FinishTime, finish)
 	}
 }
-

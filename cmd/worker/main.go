@@ -20,13 +20,30 @@ func main() {
 
 	fmt.Println("Starting smolk8s worker")
 
-	w := worker.New("")
-	api := worker.NewServer(host, port, w)
+	w1 := worker.New("")
+	wapi1 := worker.NewServer(host, port, w1)
 
-	go w.RunTasks()
-	go w.CollectStats()
-	go w.UpdateTasks()
+	go w1.RunTasks()
+	go w1.CollectStats()
+	go w1.UpdateTasks()
 
-	// Block on the API server.
-	api.Start()
+	go wapi1.Start()
+
+	w2 := worker.New("")
+	wapi2 := worker.NewServer(host, port+1, w2)
+
+	go w2.RunTasks()
+	go w2.CollectStats()
+	go w2.UpdateTasks()
+
+	go wapi2.Start()
+
+	w3 := worker.New("")
+	wapi3 := worker.NewServer(host, port+2, w3)
+
+	go w3.RunTasks()
+	go w3.CollectStats()
+	go w3.UpdateTasks()
+
+	wapi3.Start()
 }

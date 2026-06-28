@@ -62,7 +62,7 @@ func (s *Server) StartTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.Manager.AddTask(te)
+	s.Manager.addTask(te)
 	log.Printf("Added task %v\n", te.Task.ID)
 	w.WriteHeader(201)
 	json.NewEncoder(w).Encode(te.Task)
@@ -71,7 +71,7 @@ func (s *Server) StartTaskHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) GetTasksHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	json.NewEncoder(w).Encode(s.Manager.GetTasks())
+	json.NewEncoder(w).Encode(s.Manager.getTasks())
 }
 
 func (s *Server) StopTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -99,7 +99,7 @@ func (s *Server) StopTaskHandler(w http.ResponseWriter, r *http.Request) {
 	taskCopy.State = task.Completed
 	te.Task = taskCopy
 
-	s.Manager.AddTask(te)
+	s.Manager.addTask(te)
 	log.Printf("Added task event %v to stop task %v\n", te.ID, taskToStop.ID)
 	w.WriteHeader(204)
 }

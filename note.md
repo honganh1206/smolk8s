@@ -75,6 +75,10 @@ We CAN run multiple instances of the Manager, but it will add complexity since w
 
 Manager receives tasks as Pending -> Hand out tasks to workers (Scheduled) -> Workers run tasks with Docker client (Running) -> Task done running (Completed) or failed (Failed) -> Manager compares task state in DB with task state returned from workers -> Sync task state to state of response
 
+## Scheduler
+
+Accept a task and a list of nodes -> Filter out nodes that meet the resource requirements -> Score each candidate node -> Pick the node with the best scores
+
 ## Failures
 
 Failures could happen at the application (startup, bugs) / individual tasks (resource problems, Docker daemon fail), orchestration system (worker, manager)

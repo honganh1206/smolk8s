@@ -69,7 +69,7 @@ func (a *Server) StartTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	a.Worker.AddTask(te.Task)
+	a.Worker.addTask(te.Task)
 	log.Printf("Added task %v\n", te.Task.ID)
 	w.WriteHeader(201)
 	json.NewEncoder(w).Encode(te.Task)
@@ -78,7 +78,7 @@ func (a *Server) StartTaskHandler(w http.ResponseWriter, r *http.Request) {
 func (a *Server) GetTasksHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	json.NewEncoder(w).Encode(a.Worker.GetTasks())
+	json.NewEncoder(w).Encode(a.Worker.getTasks())
 }
 
 func (a *Server) GetStatsHandler(w http.ResponseWriter, r *http.Request) {
@@ -106,7 +106,7 @@ func (a *Server) StopTaskHandler(w http.ResponseWriter, r *http.Request) {
 	// and we cannot change the status of the task in the data store when adding a task to the queue
 	taskCopy := *taskToStop
 	taskCopy.State = task.Completed
-	a.Worker.AddTask(taskCopy)
+	a.Worker.addTask(taskCopy)
 	log.Printf("Added task %v to stop container %v\n", taskToStop.ID, taskToStop.ContainerID)
 	w.WriteHeader(204)
 }

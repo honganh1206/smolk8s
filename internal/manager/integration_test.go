@@ -33,14 +33,14 @@ func TestSendWorkDeliversTaskToWorker(t *testing.T) {
 	w, server, addr := newWorkerServer(t)
 	defer server.Close()
 
-	m := New([]string{addr})
+	m := New([]string{addr}, "")
 
 	id := uuid.New()
 	te := task.TaskEvent{
 		ID:   uuid.New(),
 		Task: task.Task{ID: id, Name: "t1", Image: "strm/helloworld-http"},
 	}
-	m.AddTask(te)
+	m.addTask(te)
 	m.sendWork()
 
 	// Worker side: task landed on the queue (StartTaskHandler -> AddTask).
@@ -81,7 +81,7 @@ func TestRestartTaskDeliversToWorker(t *testing.T) {
 	id := uuid.New()
 	tk := &task.Task{ID: id, Name: "t1", Image: "strm/helloworld-http", State: task.Failed}
 
-	m := New([]string{addr})
+	m := New([]string{addr}, "")
 	m.TaskDb[id] = tk
 	m.TaskWorkerMap[id] = addr
 
