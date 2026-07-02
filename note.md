@@ -79,6 +79,14 @@ Manager receives tasks as Pending -> Hand out tasks to workers (Scheduled) -> Wo
 
 Accept a task and a list of nodes -> Filter out nodes that meet the resource requirements -> Score each candidate node -> Pick the node with the best scores
 
+Two approaches: 
+1. Round-robin
+2. EPVM (Enhanced Parallel Virtual Machine) which converts the total usage of resources (CPU, memory) to a single cost and assign jobs to the machine with the lowest cost.
+
+## EPVM algorithm
+
+Take the base as the number of machines, computes the current and hypothetical new exponential costs from the machine's utilization metrics, calculates the marginal cost as `NewCost − CurrentCost`, and assigns the job to the machine with the smallest marginal cost.
+
 ## Failures
 
 Failures could happen at the application (startup, bugs) / individual tasks (resource problems, Docker daemon fail), orchestration system (worker, manager)

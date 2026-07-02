@@ -29,7 +29,7 @@ func main() {
 
 	fmt.Printf("Starting smolk8s manager with %d worker(s): %v\n", len(workers), workers)
 
-	m := manager.New(workers, "roundrobin")
+	m := manager.New(workers, "epvm")
 	mapi := manager.NewServer(mhost, mport, m)
 
 	go m.ProcessTasks()

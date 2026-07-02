@@ -54,6 +54,8 @@ func New(workers []string, schedulerType string) *Manager {
 	switch schedulerType {
 	case "roundrobin":
 		s = &scheduler.RoundRobin{Name: "roundrobin"}
+	case "epvm":
+		s = &scheduler.RoundRobin{Name: "epvm"}
 	default:
 		s = &scheduler.RoundRobin{Name: "roundrobin"}
 	}

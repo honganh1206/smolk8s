@@ -1,4 +1,4 @@
-package worker
+package metrics
 
 import (
 	"log"

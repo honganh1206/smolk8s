@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/honganh1206/smolk8s/internal/metrics"
 	"github.com/honganh1206/smolk8s/internal/task"
 )
 
@@ -19,7 +20,7 @@ type Worker struct {
 	// Map UUIDs to tasks as datastore,
 	// describing the current state of the task
 	Db        map[uuid.UUID]*task.Task
-	Stats     *Stats
+	Stats     *metrics.Stats
 	TaskCount int
 }
 
@@ -105,7 +106,7 @@ func New(name string) *Worker {
 func (w *Worker) CollectStats() {
 	for {
 		log.Println("[worker] Collecting stats...")
-		w.Stats = GetStats()
+		w.Stats = metrics.GetStats()
 		w.Stats.TaskCount = w.TaskCount
 		// Trigger every 15 seconds
 		time.Sleep(15 * time.Second)
